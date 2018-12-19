@@ -11,13 +11,13 @@ import (
 	"strconv"
 	"strings"
 
+	"bytes"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/bitbucket"
 	"golang.org/x/oauth2/clientcredentials"
-	"bytes"
-	"mime/multipart"
 	"io"
+	"mime/multipart"
 	"os"
 )
 
@@ -31,7 +31,7 @@ type Client struct {
 	Repositories *Repositories
 	Pagelen      uint64
 
-	HttpClient 	 *http.Client
+	HttpClient *http.Client
 }
 
 type auth struct {
@@ -91,6 +91,11 @@ func NewOAuth(i, s string) *Client {
 	return injectClient(a)
 }
 
+func NewOAuthToken(t oauth2.Token) *Client {
+	a := &auth{token: t}
+	return injectClient(a)
+}
+
 func NewOAuthbearerToken(t string) *Client {
 	a := &auth{bearerToken: t}
 	return injectClient(a)
@@ -111,7 +116,7 @@ func injectClient(a *auth) *Client {
 		Diff:               &Diff{c: c},
 		BranchRestrictions: &BranchRestrictions{c: c},
 		Webhooks:           &Webhooks{c: c},
-		Downloads:			&Downloads{c: c},
+		Downloads:          &Downloads{c: c},
 	}
 	c.Users = &Users{c: c}
 	c.User = &User{c: c}
@@ -202,7 +207,7 @@ func (c *Client) executeFileUpload(method string, urlStr string, filePath string
 
 	var fw io.Writer
 	if fw, err = w.CreateFormFile("files", fileName); err != nil {
-		return nil , err
+		return nil, err
 	}
 
 	if _, err = io.Copy(fw, fileReader); err != nil {
@@ -226,7 +231,7 @@ func (c *Client) executeFileUpload(method string, urlStr string, filePath string
 
 }
 
-func (c *Client) authenticateRequest(req *http.Request){
+func (c *Client) authenticateRequest(req *http.Request) {
 	if c.Auth.bearerToken != "" {
 		req.Header.Set("Authorization", "Bearer "+c.Auth.bearerToken)
 	}
@@ -239,8 +244,7 @@ func (c *Client) authenticateRequest(req *http.Request){
 	return
 }
 
-
-func (c *Client) doRequest(req *http.Request, emptyResponse bool) (interface{}, error){
+func (c *Client) doRequest(req *http.Request, emptyResponse bool) (interface{}, error) {
 
 	resp, err := c.HttpClient.Do(req)
 	if err != nil {
@@ -275,7 +279,6 @@ func (c *Client) doRequest(req *http.Request, emptyResponse bool) (interface{}, 
 
 	return result, nil
 }
-
 
 func (c *Client) requestUrl(template string, args ...interface{}) string {
 
